@@ -113,6 +113,8 @@ int main() {
         free(messages);
 
 
+        //uncomment the following for debugging purposes
+        
 /*
             CANMessage msg;
             for(int i = 0; i < msg_num; ++i){
