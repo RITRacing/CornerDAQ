@@ -1,6 +1,5 @@
 #include <mbed.h>
 #include <sstream>
-#include <bitset>
 #include <iostream>
 #include <string>
 
@@ -13,23 +12,23 @@
  * @author Chris Blust
  */
 
-#define CAN_BPS 250000 //bits per second
-#define DEBUG 1 //whether or not the program prints values over serial
+#define CAN_BPS 500000 //bits per second
+#define DEBUG 0 //whether or not the program prints values over serial
 #define DELAY 0.001 //how long to wait between messages
 
 //references to the sensors, add new sensors here
 AnalogIn sensors[] = {
   //A0-A5
   AnalogIn(PA_0),
-  //AnalogIn(PA_1),
-  //AnalogIn(PA_4),
-  //AnalogIn(PB_0),
-  //AnalogIn(PC_1),
-  //AnalogIn(PC_0),
+  AnalogIn(PA_1),
+  AnalogIn(PA_4),
+  AnalogIn(PB_0),
+  AnalogIn(PC_1),
+  AnalogIn(PC_0),
 
   //D12, D11
-  //AnalogIn(PA_6),
-  //AnalogIn(PA_7)
+  AnalogIn(PA_6),
+  AnalogIn(PA_7)
 };
 
 //must add new ID for each set of 4 sensors
@@ -78,7 +77,10 @@ CANMessage * construct_can(uint16_t * values, uint8_t msg_num){
 }
 
 int main() {
-    if(DEBUG) printf("Start\r\n");
+    #if DEBUG
+    printf("Start\r\n");
+    #endif
+
     uint16_t values[NUM_SENS];
     while(1) {
         //get an array of current sensor readings
@@ -86,13 +88,13 @@ int main() {
             values[i] = (uint16_t) 4095 * sensors[i].read();
         }
 
-        if(DEBUG){
-            printf("Sending: ");
-            for(int i = 0; i < NUM_SENS; ++i){
-                printf("%d ", values[i]);
-            }
-            printf("\r\n");
+        #if DEBUG
+        printf("Sending: ");
+        for(int i = 0; i < NUM_SENS; ++i){
+            printf("%d ", values[i]);
         }
+        printf("\r\n");
+        #endif
 
         //determine the number of CAN packets required
         uint8_t msg_num = NUM_SENS / 4;
@@ -107,40 +109,43 @@ int main() {
         for(uint8_t i = 0; i < msg_num; ++i){
             if(!can.write(messages[i])){
                 can.reset();
-                if(DEBUG) printf("can resetting\r\n");
+
+                #if DEBUG
+                printf("can resetting\r\n");
+                #endif
             }
         }
         free(messages);
 
 
-        //uncomment the following for debugging purposes
-        
-/*
-            CANMessage msg;
-            for(int i = 0; i < msg_num; ++i){
-                if(can2.read(msg)){
-                    uint16_t vs[4] = {0,0,0,0};
-                    uint8_t v = 0;
-                    for(int x = 0; x < 4; ++x){
-                        vs[x] = (vs[x] | msg.data[v]) << 8;
-                        vs[x] = (vs[x] | msg.data[v + 1]);
-                        v+=2;
-                    }
-                    printf("recieved: ");
-                    for(int x = 0; x < 4; x++){
-                        printf("%d ", vs[x]);
-                    }
-                    printf("\r\n");
+
+        #if DEBUG
+        CANMessage msg;
+        for(int i = 0; i < msg_num; ++i){
+            if(can2.read(msg)){
+                uint16_t vs[4] = {0,0,0,0};
+                uint8_t v = 0;
+                for(int x = 0; x < 4; ++x){
+                    vs[x] = (vs[x] | msg.data[v]) << 8;
+                    vs[x] = (vs[x] | msg.data[v + 1]);
+                    v+=2;
                 }
+                printf("recieved: ");
+                for(int x = 0; x < 4; x++){
+                    printf("%d ", vs[x]);
+                }
+                printf("\r\n");
             }
-            printf("\r\n");
+        }
+        printf("\r\n");
 
-            wait(1.3);
-            printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
-
+        wait(1.3);
+        printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
 
         wait(DELAY);
         can.reset();
-        */
+        #endif
+        wait(DELAY);
     }
 }
+
